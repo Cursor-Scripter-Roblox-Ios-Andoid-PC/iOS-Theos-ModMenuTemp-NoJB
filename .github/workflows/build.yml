@@ -6,7 +6,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install Theos
         run: |
@@ -18,8 +18,11 @@ jobs:
           make package FINALPACKAGE=1
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: compiled-dylib
-          path: .theos/obj/debug/*.dylib
-          if-no-files-found: error
+          path: |
+            .theos/obj/arm64/*.dylib
+            .theos/obj/*.dylib
+            packages/*.deb
+          if-no-files-found: warn
