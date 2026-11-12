@@ -8,8 +8,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Theos Environment
-        uses: Randomblock1/theos-action@v1
+      - name: Install Dependencies & Theos
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git make clang libssl-dev libplist-dev libxml2-dev xz-utils fakeroot rsync curl
+          git clone --recursive https://github.com/theos/theos.git $HOME/theos
+          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
 
       - name: Build Package
         run: |
