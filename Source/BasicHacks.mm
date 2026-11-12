@@ -54,17 +54,14 @@ void* BasicHacks::HacksThread(void* arg)
 #include <chrono>
 #include <thread>
 
-namespace offsets {
-    constexpr uintptr_t OFFSET_GWorld                   = 0x04d5b510;
-    constexpr uintptr_t OFFSET_OwningGameInstance       = 0x320;
-    constexpr uintptr_t OFFSET_LocalPlayers             = 0x38;
-    constexpr uintptr_t OFFSET_LocalPlayerController    = 0x30;
-    constexpr uintptr_t OFFSET_PlayerCameraManager      = 0x480;
-}
+// Просто объявляем их как обычные переменные, без namespace и constexpr
+uintptr_t OFFSET_GWorld                   = 0x04d5b510;
+uintptr_t OFFSET_OwningGameInstance       = 0x320;
+uintptr_t OFFSET_LocalPlayers             = 0x38;
+uintptr_t OFFSET_LocalPlayerController    = 0x30;
+uintptr_t OFFSET_PlayerCameraManager      = 0x480;
 
 void BasicHacks::HacksThread() {
-    using namespace offsets;
-
     static uintptr_t BaseAddr = (uintptr_t)_dyld_get_image_header(0);
     static uintptr_t GWorld = 0;
 
@@ -88,6 +85,7 @@ void BasicHacks::HacksThread() {
     uintptr_t PlayerCameraManager = KomaruPatch::ReadMem(LocalPlayerController + OFFSET_PlayerCameraManager);
     if(!PlayerCameraManager) return;
 
+    // Теперь это сработает, потому что мы починили KPatch.hpp
     if(!KomaruPatch::WriteMem<float>(PlayerCameraManager + 0x33c0, KTempVars.CameraFOV)){
         return;
     }
@@ -131,4 +129,3 @@ void BasicHacks::Initialize(){
     static GameLoop *gameLoop = [[GameLoop alloc] init];
     [gameLoop start];
 }
-
