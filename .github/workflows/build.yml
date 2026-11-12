@@ -13,14 +13,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git make clang libssl-dev libplist-dev libxml2-dev libxml2-utils xz-utils fakeroot rsync curl unzip build-essential
           
-          # 1. Качаем базу Theos
           git clone --recursive https://github.com/theos/theos.git $HOME/theos
           
-          # 2. Качаем iOS SDK
           rm -rf $HOME/theos/sdks
           git clone --depth 1 https://github.com/theos/sdks.git $HOME/theos/sdks
           
-          # 3. Качаем Linux Toolchain (тот самый компилятор)
+          rm -rf $HOME/theos/toolchain
           git clone --depth 1 https://github.com/theos/toolchain.git $HOME/theos/toolchain
           cd $HOME/theos/toolchain
           git checkout linux
