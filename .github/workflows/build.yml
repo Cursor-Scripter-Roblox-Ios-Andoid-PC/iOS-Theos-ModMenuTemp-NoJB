@@ -3,29 +3,13 @@ on: [push, workflow_dispatch]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04 # <--- ВОТ ГЛАВНЫЙ ФИКС
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Dependencies & Theos & Toolchain
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y git make clang libssl-dev libplist-dev libxml2-dev libxml2-utils xz-utils fakeroot rsync curl unzip build-essential
-          
-          git clone --recursive https://github.com/theos/theos.git $HOME/theos
-          
-          rm -rf $HOME/theos/sdks
-          git clone --depth 1 https://github.com/theos/sdks.git $HOME/theos/sdks
-          
-          rm -rf $HOME/theos/toolchain
-          git clone --depth 1 https://github.com/theos/toolchain.git $HOME/theos/toolchain
-          cd $HOME/theos/toolchain
-          git checkout linux
-          curl -L https://github.com/theos/toolchain/releases/download/linux-20220418/linux-toolchain.tar.xz -o /tmp/toolchain.tar.xz
-          tar -xf /tmp/toolchain.tar.xz -C $HOME/theos/toolchain/
-          
-          echo "THEOS=$HOME/theos" >> $GITHUB_ENV
+      - name: Setup Theos Environment
+        uses: Randomblock1/theos-action@v1
 
       - name: Build Package
         run: |
