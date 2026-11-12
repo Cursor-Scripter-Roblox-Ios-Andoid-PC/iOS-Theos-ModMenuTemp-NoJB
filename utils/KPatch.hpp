@@ -49,7 +49,7 @@ public:
     }
 
     template <typename T>
-    static bool(uintptr_t address, const T& value) {
+    static bool WriteMem(uintptr_t address, const T& value) {
         if (address == 0) return false;
         vm_protect(mach_task_self(), (vm_address_t)address, sizeof(T), false, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_COPY);
         memcpy(reinterpret_cast<void*>(address), &value, sizeof(T));
