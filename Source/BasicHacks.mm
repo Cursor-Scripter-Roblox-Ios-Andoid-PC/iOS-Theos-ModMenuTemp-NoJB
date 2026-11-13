@@ -57,7 +57,6 @@ void* BasicHacks::HacksThread(void* arg)
 struct Vector3 { float x, y, z; };
 std::vector<Vector3> enemyPositions; 
 
-// Типы функций Il2Cpp
 typedef void* (*il2cpp_domain_get_t)();
 typedef void* (*il2cpp_domain_assembly_open_t)(void*, const char*);
 typedef void* (*il2cpp_assembly_get_image_t)(void*);
@@ -82,11 +81,9 @@ void BasicHacks::HacksThread() {
     void* assembly = assembly_open(domain, "Assembly-CSharp.dll");
     void* image = assembly_get_image(assembly);
     
-    // Ищем класс Player
     void* playerClass = class_from_name(image, "", "Player"); 
     if (!playerClass) return;
 
-    // Ищем статический список Instances
     void* instancesField = class_get_field(playerClass, "Instances");
     if (!instancesField) return;
 
@@ -94,39 +91,35 @@ void BasicHacks::HacksThread() {
     field_static_get(instancesField, &instancesList);
     if (!instancesList) return;
 
-    // В C# List<T> элементы лежат в массиве по 0x10, а размер по 0x18
-    uintptr_t itemsArray = KomaruPatch::ReadMem(instancesList + 0x10);
+    // ТУТ ИСПРАВЛЕНО: явно указываем тип uintptr_t и int
+    uintptr_t itemsArray = KomaruPatch::ReadMem<uintptr_t>(instancesList + 0x10);
     int size = KomaruPatch::ReadMem<int>(instancesList + 0x18);
+    
     if (size <= 0 || size > 100) return;
 
     enemyPositions.clear();
 
     for (int i = 0; i < size; i++) {
-        // Получаем объект игрока (указатель 8 байт)
-        uintptr_t entity = KomaruPatch::ReadMem(itemsArray + (i * 0x8));
+        uintptr_t entity = KomaruPatch::ReadMem<uintptr_t>(itemsArray + (i * 0x8));
         if (!entity) continue;
         
-        // Читаем координаты по оффсету 0x268 !!!
         Vector3 pos = KomaruPatch::ReadMem<Vector3>(entity + 0x268);
         
-        // Проверка, чтобы отсеять нулевые координаты
         if (pos.x != 0.0f && pos.y != 0.0f && pos.z != 0.0f) {
             enemyPositions.push_back(pos);
         }
     }
 }
 
-// Таймер
 @implementation GameLoop { dispatch_source_t _timer; }
 
 - (void)start {
     _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_global_queue(0, 0));
-    dispatch_source_set_timer(_timer, dispatch_time(DISPATCH_TIME_NOW, 0), 10000000, 0); // 10ms
+    dispatch_source_set_timer(_timer, dispatch_time(DISPATCH_TIME_NOW, 0), 10000000, 0);
     dispatch_source_set_event_handler(_timer, ^{ BasicHacks::HacksThread(); });
     dispatch_resume(_timer);
 }
 
-// ВОТ ТОТ САМЫЙ МЕТОД STOP, КОТОРОГО НЕ ХВАТАЛО
 - (void)stop {
     if (_timer) {
         dispatch_source_cancel(_timer);
