@@ -106,7 +106,7 @@ void BasicHacks::HacksThread() {
         uintptr_t entity = KomaruPatch::ReadMem(itemsArray + (i * 0x8));
         if (!entity) continue;
         
-        // Читаем твои координаты по оффсету 0x268 !!!
+        // Читаем координаты по оффсету 0x268 !!!
         Vector3 pos = KomaruPatch::ReadMem<Vector3>(entity + 0x268);
         
         // Проверка, чтобы отсеять нулевые координаты
@@ -118,11 +118,22 @@ void BasicHacks::HacksThread() {
 
 // Таймер
 @implementation GameLoop { dispatch_source_t _timer; }
+
 - (void)start {
     _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_global_queue(0, 0));
     dispatch_source_set_timer(_timer, dispatch_time(DISPATCH_TIME_NOW, 0), 10000000, 0); // 10ms
     dispatch_source_set_event_handler(_timer, ^{ BasicHacks::HacksThread(); });
     dispatch_resume(_timer);
+}
+
+// ВОТ ТОТ САМЫЙ МЕТОД STOP, КОТОРОГО НЕ ХВАТАЛО
+- (void)stop {
+    if (_timer) {
+        dispatch_source_cancel(_timer);
+        dispatch_source_set_cancel_handler(_timer, ^{
+            _timer = nil;
+        });
+    }
 }
 @end
 
