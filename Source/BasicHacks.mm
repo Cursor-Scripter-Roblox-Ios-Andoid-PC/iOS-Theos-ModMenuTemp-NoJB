@@ -53,7 +53,6 @@ void* BasicHacks::HacksThread(void* arg)
 #include "../MenuLoad/Includes.h"
 #include <dlfcn.h>
 
-// Тут мы просто создаем переменные (без extern и без struct Vector3, они уже в Includes.h)
 std::vector<Vector3> enemyPositions; 
 float viewMatrix[16] = {0};
 
@@ -84,20 +83,18 @@ void BasicHacks::HacksThread() {
     void* assembly = assembly_open(domain, "Assembly-CSharp.dll");
     void* image = assembly_get_image(assembly);
 
-    // Читаем матрицу камеры (стандартный оффсет Unity 0xF0)
     void* cameraClass = class_from_name(image, "UnityEngine", "Camera");
     if (cameraClass && class_get_method && runtime_invoke) {
         void* mainCamMethod = class_get_method(cameraClass, "get_main", 0);
         if (mainCamMethod) {
             void* cam = runtime_invoke(mainCamMethod, nullptr, nullptr, nullptr);
             if (cam) {
-                uintptr_t matrixAddr = (uintptr_t)cam + 0xF0; // Стандартный оффсет ViewMatrix
+                uintptr_t matrixAddr = (uintptr_t)cam + 0xF0; 
                 memcpy(viewMatrix, (void*)matrixAddr, sizeof(float) * 16);
             }
         }
     }
 
-    // Читаем игроков
     void* playerClass = class_from_name(image, "", "Player"); 
     if (!playerClass) return;
     void* instancesField = class_get_field(playerClass, "Instances");
@@ -138,4 +135,3 @@ void BasicHacks::Initialize(){
     static GameLoop *gameLoop = [[GameLoop alloc] init];
     [gameLoop start];
 }
-
