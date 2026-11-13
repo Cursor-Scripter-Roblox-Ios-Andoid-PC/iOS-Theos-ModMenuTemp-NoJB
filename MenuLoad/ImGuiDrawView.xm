@@ -146,7 +146,6 @@ static bool MenDeal = true;
 
         ImGui_ImplMetal_NewFrame(renderPassDescriptor);
         ImGui::NewFrame();
-                ImGui::NewFrame();
 
         // --- ESP START ---
         auto WorldToScreen = [](Vector3 pos, ImVec2& screen, float* matrix, int width, int height) -> bool {
