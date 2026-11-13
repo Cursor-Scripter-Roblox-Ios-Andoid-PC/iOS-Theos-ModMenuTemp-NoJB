@@ -51,11 +51,11 @@ void* BasicHacks::HacksThread(void* arg)
 // by silentNinjaBee - using GCD for timing and thread management
 #import "BasicHacks.h"
 #include "../MenuLoad/Includes.h"
-#include <vector>
 #include <dlfcn.h>
 
-struct Vector3 { float x, y, z; };
+// Тут мы просто создаем переменные (без extern и без struct Vector3, они уже в Includes.h)
 std::vector<Vector3> enemyPositions; 
+float viewMatrix[16] = {0};
 
 typedef void* (*il2cpp_domain_get_t)();
 typedef void* (*il2cpp_domain_assembly_open_t)(void*, const char*);
@@ -63,6 +63,8 @@ typedef void* (*il2cpp_assembly_get_image_t)(void*);
 typedef void* (*il2cpp_class_from_name_t)(void*, const char*, const char*);
 typedef void* (*il2cpp_class_get_field_from_name_t)(void*, const char*);
 typedef void (*il2cpp_field_static_get_value_t)(void*, void*);
+typedef void* (*il2cpp_class_get_method_from_name_t)(void*, const char*, int);
+typedef void* (*il2cpp_runtime_invoke_t)(void*, void*, void**, void**);
 
 void BasicHacks::HacksThread() {
     void* handle = dlopen("UnityFramework", RTLD_NOW);
@@ -74,16 +76,30 @@ void BasicHacks::HacksThread() {
     auto class_from_name = (il2cpp_class_from_name_t)dlsym(handle, "il2cpp_class_from_name");
     auto class_get_field = (il2cpp_class_get_field_from_name_t)dlsym(handle, "il2cpp_class_get_field_from_name");
     auto field_static_get = (il2cpp_field_static_get_value_t)dlsym(handle, "il2cpp_field_static_get_value");
+    auto class_get_method = (il2cpp_class_get_method_from_name_t)dlsym(handle, "il2cpp_class_get_method_from_name");
+    auto runtime_invoke = (il2cpp_runtime_invoke_t)dlsym(handle, "il2cpp_runtime_invoke");
 
     if (!domain_get) return;
-
     void* domain = domain_get();
     void* assembly = assembly_open(domain, "Assembly-CSharp.dll");
     void* image = assembly_get_image(assembly);
-    
+
+    // Читаем матрицу камеры (стандартный оффсет Unity 0xF0)
+    void* cameraClass = class_from_name(image, "UnityEngine", "Camera");
+    if (cameraClass && class_get_method && runtime_invoke) {
+        void* mainCamMethod = class_get_method(cameraClass, "get_main", 0);
+        if (mainCamMethod) {
+            void* cam = runtime_invoke(mainCamMethod, nullptr, nullptr, nullptr);
+            if (cam) {
+                uintptr_t matrixAddr = (uintptr_t)cam + 0xF0; // Стандартный оффсет ViewMatrix
+                memcpy(viewMatrix, (void*)matrixAddr, sizeof(float) * 16);
+            }
+        }
+    }
+
+    // Читаем игроков
     void* playerClass = class_from_name(image, "", "Player"); 
     if (!playerClass) return;
-
     void* instancesField = class_get_field(playerClass, "Instances");
     if (!instancesField) return;
 
@@ -91,20 +107,15 @@ void BasicHacks::HacksThread() {
     field_static_get(instancesField, &instancesList);
     if (!instancesList) return;
 
-    // ТУТ ИСПРАВЛЕНО: явно указываем тип uintptr_t и int
     uintptr_t itemsArray = KomaruPatch::ReadMem<uintptr_t>(instancesList + 0x10);
     int size = KomaruPatch::ReadMem<int>(instancesList + 0x18);
-    
     if (size <= 0 || size > 100) return;
 
     enemyPositions.clear();
-
     for (int i = 0; i < size; i++) {
         uintptr_t entity = KomaruPatch::ReadMem<uintptr_t>(itemsArray + (i * 0x8));
         if (!entity) continue;
-        
         Vector3 pos = KomaruPatch::ReadMem<Vector3>(entity + 0x268);
-        
         if (pos.x != 0.0f && pos.y != 0.0f && pos.z != 0.0f) {
             enemyPositions.push_back(pos);
         }
@@ -112,21 +123,14 @@ void BasicHacks::HacksThread() {
 }
 
 @implementation GameLoop { dispatch_source_t _timer; }
-
 - (void)start {
     _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_global_queue(0, 0));
-    dispatch_source_set_timer(_timer, dispatch_time(DISPATCH_TIME_NOW, 0), 10000000, 0);
+    dispatch_source_set_timer(_timer, dispatch_time(DISPATCH_TIME_NOW, 0), 10000000, 0); 
     dispatch_source_set_event_handler(_timer, ^{ BasicHacks::HacksThread(); });
     dispatch_resume(_timer);
 }
-
 - (void)stop {
-    if (_timer) {
-        dispatch_source_cancel(_timer);
-        dispatch_source_set_cancel_handler(_timer, ^{
-            _timer = nil;
-        });
-    }
+    if (_timer) { dispatch_source_cancel(_timer); _timer = nil; }
 }
 @end
 
@@ -134,3 +138,4 @@ void BasicHacks::Initialize(){
     static GameLoop *gameLoop = [[GameLoop alloc] init];
     [gameLoop start];
 }
+
