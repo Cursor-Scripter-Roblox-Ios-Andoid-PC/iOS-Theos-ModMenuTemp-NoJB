@@ -146,7 +146,35 @@ static bool MenDeal = true;
 
         ImGui_ImplMetal_NewFrame(renderPassDescriptor);
         ImGui::NewFrame();
-        
+                ImGui::NewFrame();
+
+        // --- ESP START ---
+        auto WorldToScreen = [](Vector3 pos, ImVec2& screen, float* matrix, int width, int height) -> bool {
+            float w = matrix[3] * pos.x + matrix[7] * pos.y + matrix[11] * pos.z + matrix[15];
+            if (w < 0.01f) return false;
+            float x = matrix[0] * pos.x + matrix[4] * pos.y + matrix[8] * pos.z + matrix[12];
+            float y = matrix[1] * pos.x + matrix[5] * pos.y + matrix[9] * pos.z + matrix[13];
+            screen.x = (width / 2.0f) + (width / 2.0f) * x / w;
+            screen.y = (height / 2.0f) - (height / 2.0f) * y / w;
+            return true;
+        };
+
+        ImDrawList* draw_list = ImGui::GetBackgroundDrawList();
+        ImVec2 screenSize = ImGui::GetIO().DisplaySize;
+
+        for (auto& pos : enemyPositions) {
+            ImVec2 screenPos;
+            if (WorldToScreen(pos, screenPos, viewMatrix, (int)screenSize.x, (int)screenSize.y)) {
+                draw_list->AddRect(
+                    ImVec2(screenPos.x - 25, screenPos.y - 50),
+                    ImVec2(screenPos.x + 25, screenPos.y + 10),
+                    IM_COL32(255, 0, 0, 255), 0.0f, 0, 2.0f
+                );
+            }
+        }
+        // --- ESP END ---
+
+        ImFont* font = ImGui::GetFont();
         ImFont* font = ImGui::GetFont();
         font->Scale = 12.f / font->FontSize;
         
