@@ -9,6 +9,11 @@ https://github.com/VenerableCode/iOS-Theos-ModMenuTemp-NoJB
 
 #pragma once
 
+#include <vector>
+struct Vector3 { float x, y, z; };
+extern std::vector<Vector3> enemyPositions;
+extern float viewMatrix[16];
+
 #include "ImGuiDrawView.h"
 #include "MenuLoad.h"
 
