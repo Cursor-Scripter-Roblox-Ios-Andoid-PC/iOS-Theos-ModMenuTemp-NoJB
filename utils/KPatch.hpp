@@ -39,12 +39,13 @@ public:
 
 class KomaruPatch {
 public:
-    static uintptr_t ReadMem(uintptr_t address) {
-        if (address == 0) return 0;
-        uintptr_t value = 0;
-        vm_size_t size = sizeof(value);
-        kern_return_t kr = vm_read_overwrite(mach_task_self(), (vm_address_t)address, (vm_size_t)sizeof(value), (vm_address_t)&value, &size);
-        if (kr != KERN_SUCCESS) return 0;
+    template <typename T>
+    static T ReadMem(uintptr_t address) {
+        if (address == 0) return T();
+        T value = {};
+        vm_size_t size = sizeof(T);
+        kern_return_t kr = vm_read_overwrite(mach_task_self(), (vm_address_t)address, (vm_size_t)sizeof(T), (vm_address_t)&value, &size);
+        if (kr != KERN_SUCCESS) return T();
         return value;
     }
 
