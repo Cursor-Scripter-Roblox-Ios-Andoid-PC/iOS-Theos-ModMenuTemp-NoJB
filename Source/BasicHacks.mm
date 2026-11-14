@@ -67,17 +67,16 @@ typedef void* (*il2cpp_class_get_method_from_name_t)(void*, const char*, int);
 typedef void* (*il2cpp_runtime_invoke_t)(void*, void*, void**, void**);
 
 void BasicHacks::HacksThread() {
-    void* handle = dlopen("UnityFramework", RTLD_NOW);
-    if (!handle) { debugStatus = "No UnityFramework"; return; }
+  
 
-    auto domain_get = (il2cpp_domain_get_t)dlsym(handle, "il2cpp_domain_get");
-    auto assembly_open = (il2cpp_domain_assembly_open_t)dlsym(handle, "il2cpp_domain_assembly_open");
-    auto assembly_get_image = (il2cpp_assembly_get_image_t)dlsym(handle, "il2cpp_assembly_get_image");
-    auto class_from_name = (il2cpp_class_from_name_t)dlsym(handle, "il2cpp_class_from_name");
-    auto class_get_field = (il2cpp_class_get_field_from_name_t)dlsym(handle, "il2cpp_class_get_field_from_name");
-    auto field_static_get = (il2cpp_field_static_get_value_t)dlsym(handle, "il2cpp_field_static_get_value");
-    auto class_get_method = (il2cpp_class_get_method_from_name_t)dlsym(handle, "il2cpp_class_get_method_from_name");
-    auto runtime_invoke = (il2cpp_runtime_invoke_t)dlsym(handle, "il2cpp_runtime_invoke");
+    auto domain_get = (il2cpp_domain_get_t)dlsym(RTLD_DEFAULT, "il2cpp_domain_get");
+    auto assembly_open = (il2cpp_domain_assembly_open_t)dlsym(RTLD_DEFAULT, "il2cpp_domain_assembly_open");
+    auto assembly_get_image = (il2cpp_assembly_get_image_t)dlsym(RTLD_DEFAULT, "il2cpp_assembly_get_image");
+    auto class_from_name = (il2cpp_class_from_name_t)dlsym(RTLD_DEFAULT, "il2cpp_class_from_name");
+    auto class_get_field = (il2cpp_class_get_field_from_name_t)dlsym(RTLD_DEFAULT, "il2cpp_class_get_field_from_name");
+    auto field_static_get = (il2cpp_field_static_get_value_t)dlsym(RTLD_DEFAULT, "il2cpp_field_static_get_value");
+    auto class_get_method = (il2cpp_class_get_method_from_name_t)dlsym(RTLD_DEFAULT, "il2cpp_class_get_method_from_name");
+    auto runtime_invoke = (il2cpp_runtime_invoke_t)dlsym(RTLD_DEFAULT, "il2cpp_runtime_invoke");
 
     if (!domain_get) { debugStatus = "No il2cpp_domain_get"; return; }
     void* domain = domain_get();
