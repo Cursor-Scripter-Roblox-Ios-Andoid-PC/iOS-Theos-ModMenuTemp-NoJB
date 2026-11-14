@@ -174,7 +174,6 @@ static bool MenDeal = true;
         // --- ESP END ---
 
         ImFont* font = ImGui::GetFont();
-        ImFont* font = ImGui::GetFont();
         font->Scale = 12.f / font->FontSize;
         
         if (MenDeal)
