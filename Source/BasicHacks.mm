@@ -55,7 +55,7 @@ void* BasicHacks::HacksThread(void* arg)
 
 std::vector<Vector3> enemyPositions; 
 float viewMatrix[16] = {0};
-std::string debugStatus = "Init..."; // Сюда пишем статус
+std::string debugStatus = "Init...";
 
 typedef void* (*il2cpp_domain_get_t)();
 typedef void* (*il2cpp_domain_assembly_open_t)(void*, const char*);
@@ -63,31 +63,47 @@ typedef void* (*il2cpp_assembly_get_image_t)(void*);
 typedef void* (*il2cpp_class_from_name_t)(void*, const char*, const char*);
 typedef void* (*il2cpp_class_get_field_from_name_t)(void*, const char*);
 typedef void (*il2cpp_field_static_get_value_t)(void*, void*);
-typedef void* (*il2cpp_class_get_method_from_name_t)(void*, const char*, int);
-typedef void* (*il2cpp_runtime_invoke_t)(void*, void*, void**, void**);
 
 void BasicHacks::HacksThread() {
-  
-
     auto domain_get = (il2cpp_domain_get_t)dlsym(RTLD_DEFAULT, "il2cpp_domain_get");
     auto assembly_open = (il2cpp_domain_assembly_open_t)dlsym(RTLD_DEFAULT, "il2cpp_domain_assembly_open");
     auto assembly_get_image = (il2cpp_assembly_get_image_t)dlsym(RTLD_DEFAULT, "il2cpp_assembly_get_image");
     auto class_from_name = (il2cpp_class_from_name_t)dlsym(RTLD_DEFAULT, "il2cpp_class_from_name");
     auto class_get_field = (il2cpp_class_get_field_from_name_t)dlsym(RTLD_DEFAULT, "il2cpp_class_get_field_from_name");
     auto field_static_get = (il2cpp_field_static_get_value_t)dlsym(RTLD_DEFAULT, "il2cpp_field_static_get_value");
-    auto class_get_method = (il2cpp_class_get_method_from_name_t)dlsym(RTLD_DEFAULT, "il2cpp_class_get_method_from_name");
-    auto runtime_invoke = (il2cpp_runtime_invoke_t)dlsym(RTLD_DEFAULT, "il2cpp_runtime_invoke");
 
-    if (!domain_get) { debugStatus = "No il2cpp_domain_get"; return; }
+    if (!domain_get) { debugStatus = "No il2cpp"; return; }
     void* domain = domain_get();
-    void* assembly = assembly_open(domain, "Assembly-CSharp.dll");
+    
+    // Пробуем разные названия сборки
+    void* assembly = assembly_open(domain, "Assembly-CSharp");
+    if (!assembly) assembly = assembly_open(domain, "Assembly-CSharp.dll");
+    if (!assembly) { debugStatus = "No Assembly"; return; }
+    
     void* image = assembly_get_image(assembly);
 
-    void* playerClass = class_from_name(image, "", "Player"); 
-    if (!playerClass) { debugStatus = "Class 'Player' not found"; return; }
+    // БРУТФОРС КЛАССОВ: перебираем все возможные
+    void* playerClass = nullptr;
+    std::string foundName = "None";
     
+    const char* classNames[] = {"Player", "PlayerCulling", "PlayerNetwork", "PlayerController", "Entity", "Actor", "LocalPlayer"};
+    for (const char* name : classNames) {
+        playerClass = class_from_name(image, "", name);
+        if (playerClass) {
+            foundName = name;
+            break;
+        }
+    }
+    
+    if (!playerClass) { debugStatus = "No class found"; return; }
+    debugStatus = "Found: " + foundName;
+    
+    // Ищем поле списка (Instances, instances, players)
     void* instancesField = class_get_field(playerClass, "Instances");
-    if (!instancesField) { debugStatus = "Field 'Instances' not found"; return; }
+    if (!instancesField) instancesField = class_get_field(playerClass, "instances");
+    if (!instancesField) instancesField = class_get_field(playerClass, "players");
+    
+    if (!instancesField) { debugStatus = "No list field"; return; }
 
     uintptr_t instancesList = 0;
     field_static_get(instancesField, &instancesList);
@@ -96,7 +112,7 @@ void BasicHacks::HacksThread() {
     uintptr_t itemsArray = KomaruPatch::ReadMem<uintptr_t>(instancesList + 0x10);
     int size = KomaruPatch::ReadMem<int>(instancesList + 0x18);
     
-    debugStatus = "Size: " + std::to_string(size);
+    debugStatus = foundName + " size: " + std::to_string(size);
     if (size <= 0 || size > 100) return;
 
     enemyPositions.clear();
@@ -104,10 +120,7 @@ void BasicHacks::HacksThread() {
         uintptr_t entity = KomaruPatch::ReadMem<uintptr_t>(itemsArray + (i * 0x8));
         if (!entity) continue;
         
-        uintptr_t network = KomaruPatch::ReadMem<uintptr_t>(entity + 0x20);
-        if (!network) continue;
-
-        Vector3 pos = KomaruPatch::ReadMem<Vector3>(network + 0x268);
+        Vector3 pos = KomaruPatch::ReadMem<Vector3>(entity + 0x268);
         if (pos.x != 0.0f && pos.y != 0.0f && pos.z != 0.0f) {
             enemyPositions.push_back(pos);
         }
