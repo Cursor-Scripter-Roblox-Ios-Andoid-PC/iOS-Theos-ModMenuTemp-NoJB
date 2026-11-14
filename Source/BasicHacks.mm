@@ -89,7 +89,6 @@ void BasicHacks::HacksThread() {
         if (mainCamMethod) {
             void* cam = runtime_invoke(mainCamMethod, nullptr, nullptr, nullptr);
             if (cam) {
-                // Стандартный оффсет матрицы в Unity
                 memcpy(viewMatrix, (void*)((uintptr_t)cam + 0xF0), sizeof(float) * 16);
             }
         }
@@ -129,6 +128,26 @@ void BasicHacks::HacksThread() {
         }
     }
 }
+
+// ВОТ ТУТ ТОТ САМЫЙ ТАЙМЕР, КОТОРЫЙ ТЫ СТЕР
+@implementation GameLoop { dispatch_source_t _timer; }
+
+- (void)start {
+    _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_global_queue(0, 0));
+    dispatch_source_set_timer(_timer, dispatch_time(DISPATCH_TIME_NOW, 0), 10000000, 0); 
+    dispatch_source_set_event_handler(_timer, ^{ BasicHacks::HacksThread(); });
+    dispatch_resume(_timer);
+}
+
+- (void)stop {
+    if (_timer) {
+        dispatch_source_cancel(_timer);
+        dispatch_source_set_cancel_handler(_timer, ^{
+            _timer = nil;
+        });
+    }
+}
+@end
 
 void BasicHacks::Initialize(){
     static GameLoop *gameLoop = [[GameLoop alloc] init];
