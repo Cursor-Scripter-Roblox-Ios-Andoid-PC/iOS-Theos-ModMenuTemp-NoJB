@@ -36,6 +36,7 @@ void UserMenu::DrawMenu()
         ImGui::Checkbox("Move Menu", &KTempVars.MoveMenu);
         ImGui::SameLine();
         ImGui::Checkbox("Streamer Mode", &KTempVars.StreamerMode);
+        ImGui::Text("Debug: %s", debugStatus.c_str());
         ImGui::Text("Enemies: %d", (int)enemyPositions.size());
         
         ImGui::End();
