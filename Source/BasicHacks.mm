@@ -55,6 +55,7 @@ void* BasicHacks::HacksThread(void* arg)
 
 std::vector<Vector3> enemyPositions; 
 float viewMatrix[16] = {0};
+std::string debugStatus = "Init..."; // Сюда пишем статус
 
 typedef void* (*il2cpp_domain_get_t)();
 typedef void* (*il2cpp_domain_assembly_open_t)(void*, const char*);
@@ -67,7 +68,7 @@ typedef void* (*il2cpp_runtime_invoke_t)(void*, void*, void**, void**);
 
 void BasicHacks::HacksThread() {
     void* handle = dlopen("UnityFramework", RTLD_NOW);
-    if (!handle) return;
+    if (!handle) { debugStatus = "No UnityFramework"; return; }
 
     auto domain_get = (il2cpp_domain_get_t)dlsym(handle, "il2cpp_domain_get");
     auto assembly_open = (il2cpp_domain_assembly_open_t)dlsym(handle, "il2cpp_domain_assembly_open");
@@ -78,34 +79,25 @@ void BasicHacks::HacksThread() {
     auto class_get_method = (il2cpp_class_get_method_from_name_t)dlsym(handle, "il2cpp_class_get_method_from_name");
     auto runtime_invoke = (il2cpp_runtime_invoke_t)dlsym(handle, "il2cpp_runtime_invoke");
 
-    if (!domain_get) return;
+    if (!domain_get) { debugStatus = "No il2cpp_domain_get"; return; }
     void* domain = domain_get();
     void* assembly = assembly_open(domain, "Assembly-CSharp.dll");
     void* image = assembly_get_image(assembly);
 
-    void* cameraClass = class_from_name(image, "UnityEngine", "Camera");
-    if (cameraClass && class_get_method && runtime_invoke) {
-        void* mainCamMethod = class_get_method(cameraClass, "get_main", 0);
-        if (mainCamMethod) {
-            void* cam = runtime_invoke(mainCamMethod, nullptr, nullptr, nullptr);
-            if (cam) {
-                uintptr_t matrixAddr = (uintptr_t)cam + 0xF0; 
-                memcpy(viewMatrix, (void*)matrixAddr, sizeof(float) * 16);
-            }
-        }
-    }
-
     void* playerClass = class_from_name(image, "", "Player"); 
-    if (!playerClass) return;
+    if (!playerClass) { debugStatus = "Class 'Player' not found"; return; }
+    
     void* instancesField = class_get_field(playerClass, "Instances");
-    if (!instancesField) return;
+    if (!instancesField) { debugStatus = "Field 'Instances' not found"; return; }
 
     uintptr_t instancesList = 0;
     field_static_get(instancesField, &instancesList);
-    if (!instancesList) return;
+    if (!instancesList) { debugStatus = "List is null"; return; }
 
     uintptr_t itemsArray = KomaruPatch::ReadMem<uintptr_t>(instancesList + 0x10);
     int size = KomaruPatch::ReadMem<int>(instancesList + 0x18);
+    
+    debugStatus = "Size: " + std::to_string(size);
     if (size <= 0 || size > 100) return;
 
     enemyPositions.clear();
@@ -113,7 +105,6 @@ void BasicHacks::HacksThread() {
         uintptr_t entity = KomaruPatch::ReadMem<uintptr_t>(itemsArray + (i * 0x8));
         if (!entity) continue;
         
-        // ФИКС: Сначала читаем _network (0x20), а потом уже координаты (0x268)
         uintptr_t network = KomaruPatch::ReadMem<uintptr_t>(entity + 0x20);
         if (!network) continue;
 
@@ -131,9 +122,7 @@ void BasicHacks::HacksThread() {
     dispatch_source_set_event_handler(_timer, ^{ BasicHacks::HacksThread(); });
     dispatch_resume(_timer);
 }
-- (void)stop {
-    if (_timer) { dispatch_source_cancel(_timer); _timer = nil; }
-}
+- (void)stop { if (_timer) { dispatch_source_cancel(_timer); _timer = nil; } }
 @end
 
 void BasicHacks::Initialize(){
