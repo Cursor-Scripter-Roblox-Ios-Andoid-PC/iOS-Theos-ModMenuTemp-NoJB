@@ -24,7 +24,7 @@ void UserMenu::DrawMenu()
 
     ImGuiWindowFlags WindowFlags = KTempVars.MoveMenu ? ImGuiWindowFlags_NoCollapse : ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
 
-    if (ImGui::Begin("KomaruTemp", NULL, WindowFlags))
+    if (ImGui::Begin("KomaruSOFT", NULL, WindowFlags))
     {
         ImGuiWindow* CurrentWindow = ImGui::GetCurrentWindow();
         KTempVars.MenuSize   = CurrentWindow->Size;
@@ -36,7 +36,9 @@ void UserMenu::DrawMenu()
         ImGui::Checkbox("Move Menu", &KTempVars.MoveMenu);
         ImGui::SameLine();
         ImGui::Checkbox("Streamer Mode", &KTempVars.StreamerMode);
-
+        ImGui::Checkbox("ESP Wallhack", &MenuDeal); // Просто чекбокс для вида
+        ImGui::Text("Enemies: %d", (int)enemyPositions.size());
+        
         ImGui::End();
     }
 }
