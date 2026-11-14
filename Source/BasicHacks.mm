@@ -112,7 +112,12 @@ void BasicHacks::HacksThread() {
     for (int i = 0; i < size; i++) {
         uintptr_t entity = KomaruPatch::ReadMem<uintptr_t>(itemsArray + (i * 0x8));
         if (!entity) continue;
-        Vector3 pos = KomaruPatch::ReadMem<Vector3>(entity + 0x268);
+        
+        // ФИКС: Сначала читаем _network (0x20), а потом уже координаты (0x268)
+        uintptr_t network = KomaruPatch::ReadMem<uintptr_t>(entity + 0x20);
+        if (!network) continue;
+
+        Vector3 pos = KomaruPatch::ReadMem<Vector3>(network + 0x268);
         if (pos.x != 0.0f && pos.y != 0.0f && pos.z != 0.0f) {
             enemyPositions.push_back(pos);
         }
