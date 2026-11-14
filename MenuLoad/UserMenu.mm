@@ -36,7 +36,6 @@ void UserMenu::DrawMenu()
         ImGui::Checkbox("Move Menu", &KTempVars.MoveMenu);
         ImGui::SameLine();
         ImGui::Checkbox("Streamer Mode", &KTempVars.StreamerMode);
-        ImGui::Checkbox("ESP Wallhack", &MenuDeal); // Просто чекбокс для вида
         ImGui::Text("Enemies: %d", (int)enemyPositions.size());
         
         ImGui::End();
