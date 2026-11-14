@@ -173,7 +173,9 @@ static bool MenDeal = true;
         }
         // --- ESP END ---
 
-        ImFont* font = ImGui::GetFont();
+        std::string debugStr = "ESP Enemies: " + std::to_string(enemyPositions.size());
+        ImGui::GetForegroundDrawList()->AddText(ImVec2(50, 50), IM_COL32(255, 255, 0, 255), debugStr.c_str());
+        ImFont* font = ImGuImGuii::GetFont();
         font->Scale = 12.f / font->FontSize;
         
         if (MenDeal)
