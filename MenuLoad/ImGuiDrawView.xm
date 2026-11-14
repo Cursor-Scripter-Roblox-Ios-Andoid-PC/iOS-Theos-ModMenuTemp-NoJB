@@ -163,7 +163,6 @@ static bool MenDeal = true;
         draw_list->AddText(ImVec2(50, 50), IM_COL32(255, 255, 0, 255), debugStr.c_str());
         // --- ESP END ---
 
-        std::string debugStr = "ESP Enemies: " + std::to_string(enemyPositions.size());
         ImFont* font = ImGui::GetFont();
         font->Scale = 12.f / font->FontSize;
         
